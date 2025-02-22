@@ -4,6 +4,7 @@
   "description": "A utility to check paths and files against a naming convention (.namingrc.json) rules file",
   "type": "commonjs",
   "main": "index.js",
+  "repository": "https://github.com/cybersonic/naming-conventions",
   "bin": {
     "naming": "./bin/cli.js"
   },
