@@ -1,0 +1,28 @@
+{
+  "name": "naming-conventions",
+  "version": "1.0.0",
+  "description": "A utility to check paths and files against a naming convention (.namingrc.json) rules file",
+  "type": "commonjs",
+  "main": "index.js",
+  "bin": {
+    "naming": "./bin/cli.js"
+  },
+  "scripts": {
+    "test": "jest",
+    "watch": "jest --silent=false --watch"
+  },
+  "keywords": [
+    "Naming",
+    "Conventions",
+    "Code",
+    "Quality"
+  ],
+  "author": "Mark Drew",
+  "license": "MIT",
+  "devDependencies": {
+    "jest": "^29.0.0"
+  },
+  "dependencies": {
+    "minimatch": "^10.0.1"
+  }
+}

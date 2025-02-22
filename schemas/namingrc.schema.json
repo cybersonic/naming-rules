@@ -1,0 +1,82 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "Naming Conventions Configuration Schema",
+    "description": "Schema for .namingrc.json configuration for naming conventions",
+    "type": "object",
+    "properties": {
+        "rules": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "type": {
+                        "description": "The type of naming rule",
+                        "type": "string",
+                        "enum": [
+                            "extension_not_allowed",
+                            "folder_not_allowed",
+                            "filename_postfix",
+                            "regex",
+                            "tag",
+                            "function"
+                        ]
+                    },
+                    "includes": {
+                        "description": "Glob pattern for file inclusion",
+                        "type": "string"
+                    },
+                    "excludes": {
+                        "description": "Glob pattern for file exclusion",
+                        "type": "string"
+                    },
+                    "value": {
+                        "description": "Additional value for the rule. For example, the required postfix or regex/tag value.",
+                        "type": "string"
+                    },
+                    "severity": {
+                        "description": "Diagnostic severity level, where 1=Error, 2=Warning, 3=Information, 4=Hint",
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 4
+                    },
+                    "message": {
+                        "description": "Message to display when the rule is broken",
+                        "type": "string"
+                    },
+                    "href": {
+                        "description": "Optional link to documentation for this rule",
+                        "type": "string",
+                        "format": "uri"
+                    }
+                },
+                "required": [
+                    "type",
+                    "includes",
+                    "severity",
+                    "message"
+                ],
+                "additionalProperties": false,
+                "if": {
+                    "properties": {
+                        "type": {
+                            "enum": [
+                                "filename_postfix",
+                                "regex",
+                                "tag"
+                            ]
+                        }
+                    }
+                },
+                "then": {
+                    "required": [
+                        "value"
+                    ]
+                }
+            }
+        }
+    },
+    "required": [
+        "rules"
+    ],
+    "additionalProperties": false
+}
