@@ -1,8 +1,8 @@
 Naming Convention 
 
-# vscode-naming-conventions
+# Naming Conventions Analyser
 
-The Naming Conventions analyser allows you to define naming conventions for your project and then check if the names of your files and folders are compliant with the defined conventions.
+The Naming Conventions Analyser allows you to define naming conventions for your project and then check if the names of your files and folders are compliant with the defined conventions.
 
 It looks for both files and folders in the workspace and checks if the names are compliant with the defined conventions defined in the `.namingrc.json` file.  It also provides JSON schema support for the `.namingrc.json` file.
 
