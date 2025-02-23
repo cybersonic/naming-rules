@@ -1,24 +1,32 @@
 {
-  "name": "naming-conventions",
+  "name": "naming-rules",
   "version": "1.0.0",
   "description": "A utility to check paths and files against a naming convention (.namingrc.json) rules file",
+  "author": "Mark Drew <mark.drew@gmail.com> (https://markdrew.io)",
   "type": "commonjs",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cybersonic/naming-conventions.git"
+  },
   "main": "index.js",
-  "repository": "https://github.com/cybersonic/naming-conventions",
   "bin": {
-    "naming": "./bin/cli.js"
+    "naming": "bin/cli.js"
   },
   "scripts": {
     "test": "jest",
     "watch": "jest --silent=false --watch"
   },
   "keywords": [
-    "Naming",
-    "Conventions",
-    "Code",
-    "Quality"
+    "Naming Conventions",
+    "Code Quality",
+    "Coding Standards",
+    "Code Review"
   ],
-  "author": "Mark Drew",
+  "categories": [
+    "Linters",
+    "Formatters",
+    "Other"
+  ],
   "license": "MIT",
   "devDependencies": {
     "jest": "^29.0.0"
