@@ -3,10 +3,9 @@
   "version": "1.1.0",
   "description": "A utility to check paths and files against a naming convention (.namingrc.json) rules file",
   "author": "Mark Drew <mark.drew@gmail.com> (https://markdrew.io)",
-  "type": "commonjs",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cybersonic/naming-conventions.git"
+    "url": "git+https://github.com/cybersonic/naming-rules.git"
   },
   "main": "index.js",
   "bin": {
@@ -32,6 +31,7 @@
     "jest": "^29.0.0"
   },
   "dependencies": {
+    "meow": "^13.2.0",
     "minimatch": "^10.0.1"
   }
 }

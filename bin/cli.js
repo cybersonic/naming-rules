@@ -3,6 +3,7 @@
 const path = require('path');
 const fs = require('fs');
 const chalk = require('chalk');
+const meow = require('meow');
 const { scanFolder } = require('../index');
 
 function printUsage() {
