@@ -13,7 +13,8 @@
   },
   "scripts": {
     "test": "jest",
-    "watch": "jest --silent=false --watch"
+    "watch": "jest --silent=false --watch",
+    "publish": "npm version patch && npm publish"
   },
   "keywords": [
     "Naming Conventions",
