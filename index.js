@@ -193,8 +193,18 @@ function validateRule(filePath, rule, config) {
     }
 
     // Next, check if the file matches an ignore pattern.
-    if (rule.excludes && minimatch(normalizedFilePath, rule.excludes)) {
-        return diagnostics; // file matches the ignore pattern, so skip this rule.
+    // split the rules.excludes by comma, and then check each one.
+
+
+
+    if (rule.excludes) {
+        const excludes = rule.excludes.split(',').map(e => e.trim());
+
+        for (const exclude of excludes) {
+            if (minimatch(normalizedFilePath, exclude)) {
+                return diagnostics; // file matches the ignore pattern, so skip this rule.
+            }
+        }
     }
 
 

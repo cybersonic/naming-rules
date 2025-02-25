@@ -1,0 +1,13 @@
+{
+    "rules": [
+        {
+            "type": "filename_postfix",
+            "excludes": "webroot/tests/**/Ignoreme.cfc,webroot/tests/**/Application.cfc",
+            "includes": "webroot/tests/**/*.cfc",
+            "value": "Test",
+            "severity": 3,
+            "message": "Unit tests should end with <SomeComponent>Test.cfc",
+            "href": "https://markdrew.io/noTests.html"
+        }
+    ]
+}

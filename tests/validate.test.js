@@ -6,6 +6,8 @@ const { findConfigFile,
     scanFile,
     getTagRegex } = require('../index');
 
+const { minimatch } = require('minimatch');
+
 describe('NamingConvention validation', () => {
 
 
@@ -42,6 +44,46 @@ describe('NamingConvention validation', () => {
         fs.rmSync('webroot', { recursive: true });
     });
 
+    test("we should be able to do multiple exclusions and exclusion globs", () => {
+
+
+        const config = {
+            "scanRoot": path.resolve('tests/sample/'),
+            "rules": [
+                {
+                    "type": "filename_postfix",
+                    "excludes": "webroot/tests/**/Ignoreme.cfc,webroot/tests/**/Application.cfc",
+                    "includes": "webroot/tests/**/*.cfc",
+                    "value": "Test",
+                    "severity": 3,
+                    "message": "Unit tests should end with <SomeComponent>Test.cfc",
+                    "href": "https://markdrew.io/noTests.html"
+                }
+            ]
+        };
+        let diagnostics = scanFile("tests/sample/webroot/tests/Application.cfc", config);
+        // Positive test
+        expect(diagnostics.length).toBe(0);
+
+        diagnostics = scanFile("tests/sample/webroot/tests/Ignoreme.cfc", config);
+        // Positive test
+        expect(diagnostics.length).toBe(0);
+
+
+        diagnostics = scanFile("tests/sample/webroot/tests/GoodTest.cfc", config);
+        // Positive test
+        expect(diagnostics.length).toBe(0);
+
+        diagnostics = scanFile("tests/sample/webroot/tests/TestBad.cfc", config);
+        // Positive test
+        expect(diagnostics.length).toBe(1);
+
+
+
+
+
+    });
+
     // test('should pass validation for a file without issues', () => {
     //     const diagnostics = validate(path.join('test_files', 'file1.cfm'), sampleConfig);
     //     expect(diagnostics.length).toBe(0);
@@ -60,7 +102,7 @@ describe('NamingConvention validation', () => {
     // });
     test('should get a parent config file', () => {
         let configPath = findConfigFile('tests/sample/folder1/folder2/folder3/test.txt');
-        expect(configPath).toBe(path.resolve('tests/sample/folder1/.namingrc.json'));
+        expect(configPath).toBe(path.resolve('tests/sample/.namingrc.json'));
 
         // Should stop if we send a root path
         let configPath2 = findConfigFile('tests/sample/folder1/folder2/folder3/test.txt', 'tests/sample/folder1/folder2/');
