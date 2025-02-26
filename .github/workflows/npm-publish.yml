@@ -21,8 +21,10 @@ jobs:
           node-version: 20
       - name: Set up Git user
         run: |
-              git config --global user.email "mark.drew@gmail.com"
+              git config --global user.email ${GIT_USER_EMAIL}
               git config --global user.name "Mark Drew"
+          env:
+            GIT_USER_EMAIL: ${{secrets.GIT_USER_EMAIL}}
       - run: npm ci
       - run: npm test
 
@@ -35,6 +37,12 @@ jobs:
         with:
           node-version: 20
           registry-url: https://registry.npmjs.org/
+      - name: Set up Git user
+        run: |
+              git config --global user.email ${GIT_USER_EMAIL}
+              git config --global user.name "Mark Drew"
+        env:
+          GIT_USER_EMAIL: ${{secrets.GIT_USER_EMAIL}}
       - run: npm ci
       - run: npm publish
         env:
