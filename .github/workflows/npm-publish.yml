@@ -4,8 +4,12 @@
 name: Node.js Package
 
 on:
-  release:
-    types: [created]
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual triggering
+permissions:
+  contents: write
 
 jobs:
   build:
