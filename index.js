@@ -28,13 +28,17 @@ class Diagnostic {
         this.range = range || {
             start: { line: 0, column: 0 },
             end: { line: 0, column: 0 }
-        },
-            this.code = "";
+        };
+        this.code = "";
+        this.name = "";
 
     }
 
     getRuleNickname() {
 
+        if (this.rule.name && this.rule.name.length > 0) {
+            return this.rule.name;
+        }
         if (this.rule.type === "function" || this.rule.type === "tag" || this.rule.type === "filename_postfix") {
             return this.rule.type + " " + this.rule.value;
         }
@@ -187,16 +191,15 @@ function validateRule(filePath, rule, config) {
         throw new Error('Rule must have a Glob pattern in the `includes` field');
     }
     if (rule.includes) {
+        // Should mwatch at least one of the includes. 
         if (!minimatch(normalizedFilePath, rule.includes)) {
             return diagnostics; // file doesn't match the include pattern, so ignore.
         }
     }
 
+
     // Next, check if the file matches an ignore pattern.
     // split the rules.excludes by comma, and then check each one.
-
-
-
     if (rule.excludes) {
         const excludes = rule.excludes.split(',').map(e => e.trim());
 
@@ -206,9 +209,6 @@ function validateRule(filePath, rule, config) {
             }
         }
     }
-
-
-
     // try {
     //     console.info(normalizedFilePath, rule.include, minimatch(normalizedFilePath, rule.include))
     // }
@@ -217,13 +217,20 @@ function validateRule(filePath, rule, config) {
     //     throw e;
     // }
     // Process rule types.
+    let diag = new Diagnostic(filePath, rule);
+
+    if (rule.name && rule.name.length > 0) {
+        diag.name = rule.name;
+    }
+
+
     switch (rule.type) {
         case 'extension_not_allowed': {
             // Here, rule.value could be a glob pattern like "*.md"
             if (minimatch(normalizedFilePath, rule.includes)) {
 
                 diagnostics.push(
-                    new Diagnostic(filePath, rule)
+                    diag
                 );
 
             }
@@ -233,7 +240,7 @@ function validateRule(filePath, rule, config) {
         case 'folder_not_allowed': {
             // For folder not allowed, we split the path and check if any segment equals the forbidden folder.
             if (minimatch(normalizedFilePath, rule.includes)) {
-                let diag = new Diagnostic(filePath, rule);
+
                 diag.resource = "folder";
                 diagnostics.push(diag);
             }
@@ -245,7 +252,9 @@ function validateRule(filePath, rule, config) {
             const baseName = path.basename(fileName, ext);
 
             if (!baseName.endsWith(rule.value)) {
-                diagnostics.push(new Diagnostic(filePath, rule));
+                diagnostics.push(
+                    diag
+                );
             }
             break;
         }
@@ -261,7 +270,7 @@ function validateRule(filePath, rule, config) {
                 const endPos = getLineColumn(content, endIndex);
 
                 const code = match[0];
-                const diag = new Diagnostic(filePath, rule, { start: startPos, end: endPos });
+                diag.range = { start: startPos, end: endPos };
                 diag.code = match[0];
                 diagnostics.push(diag);
             }
@@ -276,7 +285,9 @@ function validateRule(filePath, rule, config) {
                 const endIndex = startIndex + match[0].length;
                 const startPos = getLineColumn(content, startIndex);
                 const endPos = getLineColumn(content, endIndex);
-                const diag = new Diagnostic(filePath, rule, { start: startPos, end: endPos });
+
+                diag.range = { start: startPos, end: endPos };
+
                 diag.code = match[0];
                 diagnostics.push(diag);
             }
@@ -304,17 +315,18 @@ function validateRule(filePath, rule, config) {
                 const endIndex = startIndex + match[0].length;
                 const startPos = getLineColumn(content, startIndex);
                 const endPos = getLineColumn(content, endIndex);
-                const diag = new Diagnostic(filePath, rule, { start: startPos, end: endPos });
+
+                diag.range = { start: startPos, end: endPos };
                 diag.code = match[0];
                 diagnostics.push(diag);
             }
             break
         }
-
-
         default:
             break;
     }
+
+    // console.log(diagnostics);
     return diagnostics;
 }
 

@@ -47,6 +47,10 @@
                         "description": "Optional link to documentation for this rule",
                         "type": "string",
                         "format": "uri"
+                    },
+                    "name": {
+                        "description": "Optional name for the rule",
+                        "type": "string"
                     }
                 },
                 "required": [

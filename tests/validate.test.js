@@ -57,7 +57,8 @@ describe('NamingConvention validation', () => {
                     "value": "Test",
                     "severity": 3,
                     "message": "Unit tests should end with <SomeComponent>Test.cfc",
-                    "href": "https://markdrew.io/noTests.html"
+                    "href": "https://markdrew.io/noTests.html",
+                    "name": "TestFile"
                 }
             ]
         };
@@ -78,6 +79,10 @@ describe('NamingConvention validation', () => {
         // Positive test
         expect(diagnostics.length).toBe(1);
 
+
+
+        // Name test
+        expect(diagnostics[0].name).toBe("TestFile");
 
 
 
@@ -125,7 +130,7 @@ describe('NamingConvention validation', () => {
                 ]
             }
         );
-        // console.log(JSON.stringify(diagnostics, null, 2));
+        console.log(JSON.stringify(diagnostics, null, 2));
         expect(diagnostics.length).toBe(1);
         expect(diagnostics[0].range.start.line).toBe(18);
         expect(diagnostics[0].range.start.column).toBe(1);
