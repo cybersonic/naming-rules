@@ -14,7 +14,7 @@
   "scripts": {
     "test": "jest",
     "watch": "jest --silent=false --watch",
-    "prepublish": "npm test && npm version patch"
+    "prepublish": "npm test && npm version patch --no-git-tag-version"
   },
   "keywords": [
     "Naming Conventions",
