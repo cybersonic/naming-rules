@@ -295,5 +295,35 @@ describe("Validate File Content/Text Rules", () => {
         expect(diagnose.length).toBe(1);
 
     });
+    test("should find multiple items with the same rule in the same file", () => {
+        // Need to see what JSON does to the regex string
+        const rule = {
+            type: 'regex',
+            includes: '**/*.cfm',
+            value: /<cfoutput[^>]*>((?!<\/cfoutput>)).*?<\/cfoutput>/,
+            severity: 1,
+            message: 'No output in CFM files.',
+            href: "https://example.com/ourdocs.html",
+            name: "NoOutputInCFM"
+        };
+        const diagnostics = scanFile("tests/sample/folder1/folder2/folder3/multimatch.cfm",
+            {
+                "scanRoot": path.resolve('tests/sample/folder1'),
+                "rules": [
+                    rule
+                ]
+            }
+        );
+
+        console.log(JSON.stringify(diagnostics, null, 2));
+        expect(diagnostics.length).toBe(6);
+        // expect(diagnostics[0].range.start.line).toBe(26);
+        // expect(diagnostics[0].range.start.column).toBe(2);
+        // expect(diagnostics[0].range.end.line).toBe(26);
+        // expect(diagnostics[0].range.end.column).toBe(20);
+
+    });
+
+
 
 });

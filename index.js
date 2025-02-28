@@ -163,6 +163,9 @@ function processRules(filePath, config, diagnostics) {
     const rules = config.rules || [];
 
 
+    // TODO: rather than loop , do them all at once.
+
+
     // console.log("File Rules", fileRules.length);
     for (const rule of rules) {
         const ruleResults = validateRule(filePath, rule, config);
@@ -260,20 +263,38 @@ function validateRule(filePath, rule, config) {
         }
         case 'regex': {
 
-            const regex = new RegExp(rule.value);
+            const regex = new RegExp(rule.value, 'g');
             const content = fs.readFileSync(filePath, 'utf8');
-            const match = regex.exec(content);
-            if (match) {
+            let match;
+            while ((match = regex.exec(content)) !== null) {
                 const startIndex = match.index;
                 const endIndex = startIndex + match[0].length;
                 const startPos = getLineColumn(content, startIndex);
                 const endPos = getLineColumn(content, endIndex);
+                let multidiag = new Diagnostic(filePath, rule);
 
-                const code = match[0];
-                diag.range = { start: startPos, end: endPos };
-                diag.code = match[0];
-                diagnostics.push(diag);
+                if (rule.name && rule.name.length > 0) {
+                    multidiag.name = rule.name;
+                }
+                multidiag.range = { start: startPos, end: endPos };
+                multidiag.code = match[0];
+
+                diagnostics.push(multidiag);
             }
+
+
+
+            // if (match) {
+            //     const startIndex = match.index;
+            //     const endIndex = startIndex + match[0].length;
+            //     const startPos = getLineColumn(content, startIndex);
+            //     const endPos = getLineColumn(content, endIndex);
+
+            //     const code = match[0];
+            //     diag.range = { start: startPos, end: endPos };
+            //     diag.code = match[0];
+            //     diagnostics.push(diag);
+            // }
             break;
         }
         case 'tag': {
