@@ -137,7 +137,7 @@ describe('Naming Rules validation', () => {
                 ]
             }
         );
-        console.log(JSON.stringify(diagnostics, null, 2));
+        // console.log(JSON.stringify(diagnostics, null, 2));
         expect(diagnostics.length).toBe(1);
         expect(diagnostics[0].range.start.line).toBe(18);
         expect(diagnostics[0].range.start.column).toBe(1);
@@ -322,7 +322,7 @@ describe("Validate File Content/Text Rules", () => {
             }
         );
 
-        console.log(JSON.stringify(diagnostics, null, 2));
+        // console.log(JSON.stringify(diagnostics, null, 2));
         expect(diagnostics.length).toBe(6);
         // expect(diagnostics[0].range.start.line).toBe(26);
         // expect(diagnostics[0].range.start.column).toBe(2);
