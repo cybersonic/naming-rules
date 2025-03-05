@@ -1,9 +1,8 @@
-const fs = require('fs');
-const path = require('path');
+const { existsSync, fstat, fstatSync, readdir, readdirSync, readFileSync, statSync } = require('fs');
+const { resolve, join, relative, dirname, basename, extname } = require('path');
 const { minimatch } = require('minimatch');
-
-
 const configFileName = ".namingrc.json";
+const ignoreFolders = ["node_modules", ".git"];
 
 // A Diagnostic object
 class Diagnostic {
@@ -46,47 +45,61 @@ class Diagnostic {
     }
 }
 
-// Copied from vscode, so that we match and can provide info for users. 
-// export enum DiagnosticSeverity {
+/**
+ * Scans a folder or a directory. If it is a folder it looks for the config files from the root down, if it is a file it looks from the file up. 
+ * It then scans the files and folders for the rules.
+ * @param {string} scanRoot - The path to the folder or file to scan.
+ * @param {Object} config - The naming convention config. (optional)
+ * @param {Array<Diagnostic>} diagnostics - An array of diagnostic messages. (optional)
+ */
+async function scan(scanRoot, config = {}) {
+    console.log("I am doing a scaaaaaaan");
+    scanRoot = resolve(scanRoot);
+    const diagnostics = [];
+    // Check the scanroot is a folder or file 
+    if (!existsSync(scanRoot)) {
+        console.error(`File or folder not found: ${scanRoot}`);
+        return diagnostics;
+    }
+    let fileConfig;
+    let configJSON = {};
 
-//     /**
-//      * Something not allowed by the rules of a language or other means.
-//      */
-//     Error = 0,
+    if (statSync(scanRoot).isFile()) {
+        fileConfig = findConfigFile(scanRoot);
+        configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
+        configJSON["scanRoot"] = dirname(scanRoot);
+        return await scanFile(scanRoot, configJSON, diagnostics);
+    }
 
-//     /**
-//      * Something suspicious but allowed.
-//      */
-//     Warning = 1,
-
-//     /**
-//      * Something to inform about but not a problem.
-//      */
-//     Information = 2,
-
-//     /**
-//      * Something to hint to a better way of doing it, like proposing
-//      * a refactoring.
-//      */
-//     Hint = 3
-// }
-
-function scanFolder(scanRoot, config = {}, diagnostics = []
+    fileConfig = await findConfigFiles(scanRoot);
+    configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
+    configJSON["scanRoot"] = scanRoot;
+    return await scanFolder(scanRoot, configJSON, diagnostics);
+    return diagnostics;
+}
+/**
+ * Scans a folder and validates it against the rules in the config. 
+ * returns an array of diagnostics. 
+ * @param {string} scanRoot 
+ * @param {Object} config 
+ * @param {Array<Diagnostic>} diagnostics 
+ * @returns 
+ */
+async function scanFolder(scanRoot, config = {}, diagnostics = []
 ) {
-    const files = fs.readdirSync(scanRoot);
-
+    const files = readdirSync(scanRoot);
     // See if there is a config file in the root.
-    const configPath = path.join(scanRoot, configFileName);
-    if (fs.existsSync(configPath)) {
-        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+    const configPath = join(scanRoot, configFileName);
+    if (existsSync(configPath)) {
+        config = JSON.parse(readFileSync(configPath, 'utf8'));
         config["scanRoot"] = scanRoot;
         // console.log("Found config!", configPath);
     }
 
     for (const file of files) {
-        const filePath = path.join(scanRoot, file);
+        const filePath = join(scanRoot, file);
         let diagnostic;
-        if (fs.statSync(filePath).isDirectory()) {
+        if (statSync(filePath).isDirectory() && !ignoreFolders.includes(file)) {
 
             // Check the rules against the folder.
             processRules(filePath, config, diagnostics);
@@ -104,68 +117,101 @@ function scanFolder(scanRoot, config = {}, diagnostics = []
 }
 
 /**
+ * Recursively searches for configuration files starting from the given file path.
+ *
+ * This asynchronous function traverses directories beginning at the provided filePath. It
+ * constructs the resolved path, checks for the existence of a designated configuration file,
+ * and if found, adds its relative path (from the rootPath) to the foundconfigs array. In the
+ * absence of the configuration file at the current level, it traverses child folders (excluding
+ * any folders specified in ignoreFolders), recursively looking for configuration files.
+ *
+ * @async
+ * @param {string} filePath - The file or directory path to begin the search.
+ * @param {string} [rootPath=""] - The root directory path used for computing relative paths.
+ *   Defaults to the first resolved path when not supplied.
+ * @param {Array<string>} [foundconfigs=[]] - An array accumulating relative paths of found configuration files.
+ * @returns {Promise<Array<string>>} A promise that resolves to an array containing the relative paths of configuration files found.
+ */
+async function findConfigFiles(filePath, rootPath = "", foundconfigs = []) {
+
+    const resolvedPath = resolve(filePath);
+    if (!rootPath) {
+        rootPath = resolvedPath;
+    }
+
+    const potentialConfigPath = join(rootPath, configFileName);
+
+    if (existsSync(potentialConfigPath)) {
+        // const relativePath = relative(rootPath, potentialConfigPath);
+        // foundconfigs.push(relativePath);
+        // console.log({ foundconfigs });
+        // // TODO: Early exit. IF we found it we done. We can worry about subfolders later.
+        return potentialConfigPath;
+    }
+    // Now go into child folders:
+    const childFolders = await readdirSync(resolvedPath).filter((file) => {
+        if (statSync(join(resolvedPath, file)).isDirectory()) {
+            return !ignoreFolders.includes(file);
+        }
+        return false;
+    });
+
+
+
+    for (const folder of childFolders) {
+        const childPath = join(resolvedPath, folder);
+        await findConfigFiles(childPath, rootPath, foundconfigs);
+    }
+    return foundconfigs;
+}
+
+
+
+/**
  * Scans an individial file path. We also can search for the config file all the way up the tree. until we hit the root path. 
  * @param {string} filePath - The path of the file to scan.
  * @param {Object} config - The naming convention config. (optional)
  * @param {Array<Object>} diagnostics - An array of diagnostic messages. (optional)
  * @param {string} rootPath - The root path of the scan. (optional)
  **/
-function scanFile(filePath, config = {}, diagnostics = [], rootPath = "/") {
-
-    // if (!config.rules) {
-    //     let configfile = findConfigFile(filePath, rootPath);
-    //     config = JSON.parse(fs.readFileSync(configfile, 'utf8'));
-    //     config["scanRoot"] = scanRoot;
-    //     console.log("Found config!", configfile);
-    // }
-
+function scanFile(filePath, config, diagnostics = [], rootPath) {
     processRules(filePath, config, diagnostics);
     return diagnostics;
-
 }
 
+/**
+ * Looks for the config file from the current path up to the root path.
+ *
+ * @param {string} filePath - The starting path from where to search for the configuration file. Can be a file or directory.
+ * @param {string} [rootPath="/"] - The root directory to limit the upward search. The search stops when this root is reached.
+ * @returns {string|null} The absolute path to the configuration file if found; otherwise, null.
+ * @throws {Error} Throws an error if the initial file path does not exist.
+ */
 function findConfigFile(filePath, rootPath = "/") {
-    // Does the filepoath exist?, make it absolute 
-    // What is the current file path I guess?
-
-    // Check the current path for the config file.
-    // console.log(path.resolve(filePath));
-    const resolvedPath = path.resolve(filePath);
-    const root = path.resolve(rootPath) || "/";
-
-    // console.log(root, resolvedPath);
-
-    if (!fs.existsSync(resolvedPath)) {
-        throw new Error(`File not found: ${filePath}`);
-    }
-    const isDir = fs.statSync(resolvedPath).isDirectory();
-    let searchPath = resolvedPath;
-    if (!isDir) {
-        searchPath = path.dirname(searchPath);
-    }
-
-    const configPath = path.join(searchPath, configFileName);
-
-
-    if (fs.existsSync(path.resolve(configPath))) {
-        return configPath;
-    }
-
-    // We only go up if we are not at the root
-    if (searchPath === root) {
+    if (filePath === rootPath) {
         return null;
     }
-    return findConfigFile(path.dirname(filePath), rootPath);
 
+    const resolvedPath = resolve(filePath);
+    const root = resolve(rootPath) || "/";
+
+    let nearestConfigPath = join(resolvedPath, configFileName);
+    if (statSync(resolvedPath).isFile()) {
+        nearestConfigPath = join(dirname(resolvedPath), configFileName);
+    }
+
+    if (existsSync(nearestConfigPath)) {
+        return nearestConfigPath;
+    }
+
+    const parent = resolve(dirname(nearestConfigPath), "..");
+
+    return findConfigFile(parent, rootPath);
 }
 
 function processRules(filePath, config, diagnostics) {
     const rules = config.rules || [];
-
-
     // TODO: rather than loop , do them all at once.
-
-
     // console.log("File Rules", fileRules.length);
     for (const rule of rules) {
         const ruleResults = validateRule(filePath, rule, config);
@@ -184,7 +230,7 @@ function validateRule(filePath, rule, config) {
     const diagnostics = [];
 
     // Get relative path  so we can use minmatch
-    const relativePath = path.relative(config.scanRoot, filePath);
+    const relativePath = relative(config.scanRoot, filePath);
 
     // Normalize file paths to use forward slashes.
     const normalizedFilePath = relativePath.replace(/\\/g, '/');
@@ -250,9 +296,9 @@ function validateRule(filePath, rule, config) {
             break;
         }
         case 'filename_postfix': {
-            const fileName = path.basename(filePath);
-            const ext = path.extname(fileName);
-            const baseName = path.basename(fileName, ext);
+            const fileName = basename(filePath);
+            const ext = extname(fileName);
+            const baseName = basename(fileName, ext);
 
             if (!baseName.endsWith(rule.value)) {
                 diagnostics.push(
@@ -262,27 +308,9 @@ function validateRule(filePath, rule, config) {
             break;
         }
         case 'regex': {
-
-            const regex = new RegExp(rule.value, 'g');
-            const content = fs.readFileSync(filePath, 'utf8');
-            let match;
-            while ((match = regex.exec(content)) !== null) {
-                const startIndex = match.index;
-                const endIndex = startIndex + match[0].length;
-                const startPos = getLineColumn(content, startIndex);
-                const endPos = getLineColumn(content, endIndex);
-                let multidiag = new Diagnostic(filePath, rule);
-
-                if (rule.name && rule.name.length > 0) {
-                    multidiag.name = rule.name;
-                }
-                multidiag.range = { start: startPos, end: endPos };
-                multidiag.code = match[0];
-
-                diagnostics.push(multidiag);
-            }
-
-
+            const regex = new RegExp(rule.value, 'gi');
+            const content = readFileSync(filePath, 'utf8');
+            multiRegExMatch(regex, content, filePath, rule, diagnostics);
 
             // if (match) {
             //     const startIndex = match.index;
@@ -298,20 +326,21 @@ function validateRule(filePath, rule, config) {
             break;
         }
         case 'tag': {
-            const content = fs.readFileSync(filePath, 'utf8');
+            const content = readFileSync(filePath, 'utf8');
             const tagRegex = getTagRegex(rule.value);
-            const match = tagRegex.exec(content);
-            if (match) {
-                const startIndex = match.index;
-                const endIndex = startIndex + match[0].length;
-                const startPos = getLineColumn(content, startIndex);
-                const endPos = getLineColumn(content, endIndex);
+            multiRegExMatch(tagRegex, content, filePath, rule, diagnostics);
+            // const match = tagRegex.exec(content);
+            // if (match) {
+            //     const startIndex = match.index;
+            //     const endIndex = startIndex + match[0].length;
+            //     const startPos = getLineColumn(content, startIndex);
+            //     const endPos = getLineColumn(content, endIndex);
 
-                diag.range = { start: startPos, end: endPos };
+            //     diag.range = { start: startPos, end: endPos };
 
-                diag.code = match[0];
-                diagnostics.push(diag);
-            }
+            //     diag.code = match[0];
+            //     diagnostics.push(diag);
+            // }
             break;
         }
         // case 'function_def': {
@@ -328,19 +357,20 @@ function validateRule(filePath, rule, config) {
         //     break
         // }
         case 'function': {
-            const content = fs.readFileSync(filePath, 'utf8');
+            const content = readFileSync(filePath, 'utf8');
             const regex = getFunctionRegex(rule.value);
-            const match = regex.exec(content);
-            if (match) {
-                const startIndex = match.index;
-                const endIndex = startIndex + match[0].length;
-                const startPos = getLineColumn(content, startIndex);
-                const endPos = getLineColumn(content, endIndex);
+            multiRegExMatch(regex, content, filePath, rule, diagnostics);
+            // const match = regex.exec(content);
+            // if (match) {
+            //     const startIndex = match.index;
+            //     const endIndex = startIndex + match[0].length;
+            //     const startPos = getLineColumn(content, startIndex);
+            //     const endPos = getLineColumn(content, endIndex);
 
-                diag.range = { start: startPos, end: endPos };
-                diag.code = match[0];
-                diagnostics.push(diag);
-            }
+            //     diag.range = { start: startPos, end: endPos };
+            //     diag.code = match[0];
+            //     diagnostics.push(diag);
+            // }
             break
         }
         default:
@@ -352,6 +382,25 @@ function validateRule(filePath, rule, config) {
 }
 
 
+
+function multiRegExMatch(regex, content, filePath, rule, diagnostics) {
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+        const startIndex = match.index;
+        const endIndex = startIndex + match[0].length;
+        const startPos = getLineColumn(content, startIndex);
+        const endPos = getLineColumn(content, endIndex);
+        let multidiag = new Diagnostic(filePath, rule);
+
+        if (rule.name && rule.name.length > 0) {
+            multidiag.name = rule.name;
+        }
+        multidiag.range = { start: startPos, end: endPos };
+        multidiag.code = match[0];
+
+        diagnostics.push(multidiag);
+    }
+}
 
 function getTagRegex(tagName) {
     return new RegExp(
@@ -377,57 +426,10 @@ function getLineColumn(content, index) {
     };
 }
 
-
-/**
- * Validate a file against both workspace and file rules.
- * @param {string} filePath - The path of the file to validate.
- * @param {Object} config - The naming convention config.
- * @returns {Array<Object>} An array of diagnostic messages.
- */
-// function validate(filePath, config) {
-//     let diagnostics = [];
-
-//     // Process workspace rules.
-//     if (config.workspace && Array.isArray(config.workspace)) {
-//         for (const rule of config.workspace) {
-//             diagnostics = diagnostics.concat(validateWorkspaceRules(filePath, rule));
-//         }
-//     }
-
-//     // Read file content for file rules.
-//     let content = '';
-//     try {
-//         content = fs.readFileSync(filePath, 'utf8');
-//     } catch (err) {
-//         diagnostics.push({
-//             type: 'file_read_error',
-//             message: `Failed to read file: ${filePath}`,
-//             severity: 5,
-//             href: null,
-//         });
-//         return diagnostics;
-//     }
-
-//     // Process file rules.
-//     if (config.file && Array.isArray(config.file)) {
-//         for (const rule of config.file) {
-//             diagnostics = diagnostics.concat(validateFileRules(filePath, rule, content));
-//         }
-//     }
-
-//     return diagnostics;
-// }
-
 module.exports = {
-    loadConfig: (configPath) => JSON.parse(fs.readFileSync(configPath, 'utf8')),
-    // validate,
-    // validateWorkspaceRules,
-    // validateFileRules,
-    // validateContentRules,
-    // NamingConventionChecker,
-    findConfigFile, //exposing for testing
-    validateRule,
-    scanFolder,
+    findConfigFiles,
+    findConfigFile,
     scanFile,
-    getTagRegex
-};
+    scanFolder,
+    scan
+}

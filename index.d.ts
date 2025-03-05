@@ -30,8 +30,10 @@ export function findConfigFile(filePath: string, rootPath?: string): string | nu
 
 export function validateRule(filePath: string, rule: any, config: any): Diagnostic[];
 
-export function scanFolder(scanRoot: string, config?: any, diagnostics?: Diagnostic[]): Diagnostic[];
+export function scanFolder(scanRoot: string, config?: any, diagnostics?: Diagnostic[]): Promise<Diagnostic[]>;
 
 export function scanFile(filePath: string, config?: any, diagnostics?: Diagnostic[], rootPath?: string): Diagnostic[];
 
 export function getTagRegex(tagName: string): RegExp;
+
+export function scan(filePath: string, config: any): Promise<Diagnostic[]>;

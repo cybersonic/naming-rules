@@ -1,6 +1,6 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema#",
-    "title": "Naming Conventions Configuration Schema",
+    "title": "Naming Rules Configuration Schema",
     "description": "Schema for .namingrc.json configuration for naming conventions",
     "type": "object",
     "properties": {

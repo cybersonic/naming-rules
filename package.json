@@ -1,7 +1,7 @@
 {
   "name": "naming-rules",
-  "version": "1.1.12",
-  "description": "A utility to check paths and files against a naming convention (.namingrc.json) rules file",
+  "version": "1.1.15",
+  "description": "A utility to check paths and files against a naming rules file (`.namingrc.json`)",
   "author": "Mark Drew <mark.drew@gmail.com> (https://markdrew.io)",
   "repository": {
     "type": "git",
@@ -9,14 +9,14 @@
   },
   "main": "index.js",
   "bin": {
-    "naming": "bin/cli.js"
+    "naming-rules": "bin/cli.js"
   },
   "scripts": {
     "test": "jest",
-    "watch": "jest --silent=false --watch",
-    "prepublish": "npm test && npm version patch --no-git-tag-version"
+    "prepublish": "npm version patch --no-git-tag-version"
   },
   "keywords": [
+    "Naming Rules",
     "Naming Conventions",
     "Code Quality",
     "Coding Standards",
@@ -29,10 +29,13 @@
   ],
   "license": "MIT",
   "devDependencies": {
+    "@babel/core": "^7.26.9",
+    "babel-jest": "^29.7.0",
     "jest": "^29.0.0"
   },
   "dependencies": {
-    "meow": "^13.2.0",
+    "chalk": "^5.4.1",
+    "commander": "^13.1.0",
     "minimatch": "^10.0.1"
   }
 }

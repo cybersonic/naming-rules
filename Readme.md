@@ -1,12 +1,41 @@
-Naming Convention 
+# Naming Rules
 
-# Naming Conventions Analyser
+This project provides a command-line interface (CLI) for scanning files and directories to ensure they adhere to specified naming conventions. It helps identify naming rule violations based on configurable rules.
 
-The Naming Conventions Analyser allows you to define naming conventions for your project and then check if the names of your files and folders are compliant with the defined conventions.
+## Installation
 
-It looks for both files and folders in the workspace and checks if the names are compliant with the defined conventions defined in the `.namingrc.json` file.  It also provides JSON schema support for the `.namingrc.json` file.
+To install the project, clone the repository and run:
 
-Rules defined in the `.namingrc.json` are in JSON format and can be defined as follows:
+```
+npm install
+```
+
+## Usage
+
+After installation, you can use the CLI to scan a specific path. The basic command structure is as follows:
+
+```
+npm run cli -- <path> [options]
+```
+
+### Options
+
+- `-r, --reporter <reporter>`: Specify how to display the results (default: simple).
+- `-s, --severity <severity>`: Choose which severity levels to display (default: all).
+- `-c, --config <config>`: Provide the path to the configuration file (default: ./naming-rules.json).
+
+### Example
+
+To scan a directory for naming rule violations, you can run:
+
+```
+npm run cli -- ./path/to/scan
+```
+
+## Configuration
+
+The project uses a configuration file named `.namingrc.json` to define the naming rules. You can specify rules for file naming conventions, folder naming conventions, and more.
+
 
 ```json
 {
@@ -21,12 +50,12 @@ Rules defined in the `.namingrc.json` are in JSON format and can be defined as f
     ]
 }
 ```
-## Features
 
-- Define naming conventions for your project
-- Save the rules in a proect specific `.namingrc.json` file
-- Check if the names of your files and folders are compliant with the defined conventions
-- JSON schema support for the `.namingrc.json` file
+## Diagnostics
+
+The CLI will output diagnostics in either a simple table format or as JSON, depending on the specified reporter option. Each diagnostic message includes details such as the severity, URI, and a description of the violation.
+
+
 
 # Writing your own rules 
 
@@ -55,9 +84,6 @@ Optionally you can also include the following properties:
 - `href`: A URL to a page that explains the rule in more detail
 - `excludes`: A glob pattern that defines the files or folders that the rule does not apply to.  For example `webroot/**/readme.md` would not match files if you have `includes` of `webroot/**/*.md` but you want to exclude `readme.md` files. These are based on the globbing library [minimatch](https://github.com/isaacs/minimatch).
 
-
-# Runing the cli
-TBD
 
 
 ### Example Rules:
@@ -142,4 +168,13 @@ The rule above looks for all files that are in the `unit_tests` folder and check
 ```
 
 The `regex` type of rule allows you to put any regex in the `value` field and it will check the content of the file for that regex. This is useful for checking for security issues, for example, passwords in code.
-Node: The above regex is just  simple example, you should use a more complex regex for your own code
+Node: The above regex is just  simple example, you should use a more complex regex for your own code.
+
+
+## Contributing
+
+Contributions are welcome! Please open an issue or submit a pull request for any improvements or bug fixes.
+
+## License
+
+This project is licensed under the MIT License.

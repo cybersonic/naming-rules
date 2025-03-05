@@ -1,17 +1,23 @@
 const fs = require('fs');
-const path = require('path');
-const { findConfigFile,
-    validateRule,
-    scanFolder,
-    scanFile,
-    getTagRegex } = require('../index');
+// const path = require('path');
+const { scan } = require('../index');
+// import { optimisedScan, findConfigFile, scanFile } from '../index';
 
-const { minimatch } = require('minimatch');
-
-describe('NamingConvention validation', () => {
+// const { minimatch } = require('minimatch');
+// const exp = require('constants');
 
 
+describe('FindConfigs', () => {
+    test("should find multiple config files in the path", () => {
 
+        let configFiles = findConfigFiles('tests/configfiles/');
+        expect(configFiles.length).toBe(4);
+
+    });
+});
+
+
+describe('Naming Rules validation', () => {
     beforeAll(() => {
         // Create temporary test directories and files.
         if (!fs.existsSync('test_files')) {

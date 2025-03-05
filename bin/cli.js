@@ -1,14 +1,31 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const fs = require('fs');
-const chalk = require('chalk');
-// const meow = require('meow');
-const { scanFolder } = require('../index');
+import { program } from 'commander';
+import chalk from 'chalk';
+import { scan, version } from '../index.js';
+import { readFileSync } from 'fs';
 
-function printUsage() {
-    console.log('Usage: naming --folder <folder> [--json]');
+program
+    .version(version())
+    .description("Naming Rules")
+    .option("-r, --reporter <reporter>", "How to display the results", "simple")
+    .option("-s, --severity <severity>", "Which severity to display", "all")
+    .option("-c, --config <config>", "Path to the config file", "./naming-rules.json")
+    .argument('<path>')
+    .parse();
+
+const options = program.opts();
+
+const pathToScan = program.args[0];
+
+if (!pathToScan || pathToScan === "") {
+    console.error("Please provide a path to scan");
+    process.exit(1);
 }
+// If it is a directory, we scan 
+const diagnostics = await scan(pathToScan);
+
+//If it is a file, we read the file and get config. 
 
 function getColorForSeverity(severity) {
     // Need to shift it by -1 to match the DiagnosticSeverity enum
@@ -27,37 +44,14 @@ function getColorForSeverity(severity) {
     }
 }
 
-const args = process.argv.slice(2);
-let folderPath = null;
-let outputFormat = 'text';
-
-for (let i = 0; i < args.length; i++) {
-    if (args[i] === '--folder' && i + 1 < args.length) {
-        folderPath = args[i + 1];
-        i++;
-    } else if (args[i] === '--json') {
-        outputFormat = 'json';
-    }
+let filtered = diagnostics;
+if (options.severity !== 'all') {
+    const severity = parseInt(options.severity);
+    filtered = diagnostics.filter(diag => diag.severity === severity);
 }
 
-if (!folderPath) {
-    printUsage();
-    process.exit(1);
-}
-
-const filePath = path.resolve(process.cwd(), folderPath);
-const diagnostics = scanFolder(filePath);
-
-if (outputFormat === 'json') {
-    console.log(JSON.stringify(diagnostics, null, 2));
+if (options.reporter === 'json') {
+    console.log(JSON.stringify(filtered, null, 2));
 } else {
-    // Example text report output with severity colouring
-    diagnostics.forEach(diag => {
-        const colorFn = getColorForSeverity(diag.severity);
-        console.log(colorFn(`File: ${diag.uri}`));
-        console.log(colorFn(`Start - Line: ${diag.range.start.line} Column: ${diag.range.start.column}`));
-        console.log(colorFn(`End - Line: ${diag.range.end.line} Column: ${diag.range.end.column}`));
-        console.log(colorFn(`Message: ${diag.message}`));
-        console.log(colorFn('-----------------------------------'));
-    });
+    console.table(filtered, ['severity', 'uri', 'message']);
 }
