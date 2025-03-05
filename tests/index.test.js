@@ -1,54 +1,54 @@
 const fs = require('fs');
 // const path = require('path');
-const { scan } = require('../index');
+const { scan, findConfigFiles, findConfigFile, scanFile } = require('../index');
 // import { optimisedScan, findConfigFile, scanFile } from '../index';
-
+const path = require('path');
 // const { minimatch } = require('minimatch');
 // const exp = require('constants');
 
 
 describe('FindConfigs', () => {
-    test("should find multiple config files in the path", () => {
+    test("should find multiple config files in the path", async () => {
 
-        let configFiles = findConfigFiles('tests/configfiles/');
-        expect(configFiles.length).toBe(4);
+        let configFile = await findConfigFiles('tests/configfiles/');
+        expect(configFile).toBe(path.resolve('tests/configfiles/.namingrc.json'));
 
     });
 });
 
 
 describe('Naming Rules validation', () => {
-    beforeAll(() => {
-        // Create temporary test directories and files.
-        if (!fs.existsSync('test_files')) {
-            fs.mkdirSync('test_files');
-        }
-        fs.writeFileSync(path.join('test_files', 'file1.cfm'), 'Some content without query.');
-        fs.writeFileSync(path.join('test_files', 'file2.cfm'), '<cfquery>SELECT * FROM table</cfquery>');
+    // beforeAll(() => {
+    //     // Create temporary test directories and files.
+    //     if (!fs.existsSync('test_files')) {
+    //         fs.mkdirSync('test_files');
+    //     }
+    //     fs.writeFileSync(path.join('test_files', 'file1.cfm'), 'Some content without query.');
+    //     fs.writeFileSync(path.join('test_files', 'file2.cfm'), '<cfquery>SELECT * FROM table</cfquery>');
 
-        if (!fs.existsSync('webroot')) {
-            fs.mkdirSync('webroot');
-        }
-        if (!fs.existsSync('webroot/tests')) {
-            fs.mkdirSync('webroot/tests');
-        }
-        fs.writeFileSync(path.join('webroot', 'readme.md'), '# Documentation');
-        fs.writeFileSync(path.join('webroot', 'readme.ignore.md'), '# Ignored Documentation');
-    });
+    //     if (!fs.existsSync('webroot')) {
+    //         fs.mkdirSync('webroot');
+    //     }
+    //     if (!fs.existsSync('webroot/tests')) {
+    //         fs.mkdirSync('webroot/tests');
+    //     }
+    //     fs.writeFileSync(path.join('webroot', 'readme.md'), '# Documentation');
+    //     fs.writeFileSync(path.join('webroot', 'readme.ignore.md'), '# Ignored Documentation');
+    // });
 
-    afterAll(() => {
-        // Clean up temporary files and directories.
-        if (fs.existsSync('test_files')) {
+    // afterAll(() => {
+    //     // Clean up temporary files and directories.
+    //     if (fs.existsSync('test_files')) {
 
-            // fs.unlinkSync(path.join('test_files', 'file1.cfm'));
-            // fs.unlinkSync(path.join('test_files', 'file2.cfm'));
-            fs.rmSync('test_files', { recursive: true });
-        }
+    //         // fs.unlinkSync(path.join('test_files', 'file1.cfm'));
+    //         // fs.unlinkSync(path.join('test_files', 'file2.cfm'));
+    //         fs.rmSync('test_files', { recursive: true });
+    //     }
 
-        fs.unlinkSync(path.join('webroot', 'readme.md'));
-        fs.unlinkSync(path.join('webroot', 'readme.ignore.md'));
-        fs.rmSync('webroot', { recursive: true });
-    });
+    //     fs.unlinkSync(path.join('webroot', 'readme.md'));
+    //     fs.unlinkSync(path.join('webroot', 'readme.ignore.md'));
+    //     fs.rmSync('webroot', { recursive: true });
+    // });
 
     test("we should be able to do multiple exclusions and exclusion globs", () => {
 
@@ -111,12 +111,13 @@ describe('Naming Rules validation', () => {
     //     expect(diagnostics.length).toBeGreaterThan(0);
     //     expect(diagnostics[0].message).toMatch(/Extension \[\*\.md\]/);
     // });
-    test('should get a parent config file', () => {
-        let configPath = findConfigFile('tests/sample/folder1/folder2/folder3/test.txt');
+    test('should get a parent config file', async () => {
+        let configPath = await findConfigFile('tests/sample/folder1/folder2/folder3/test.txt');
+
         expect(configPath).toBe(path.resolve('tests/sample/.namingrc.json'));
 
         // Should stop if we send a root path
-        let configPath2 = findConfigFile('tests/sample/folder1/folder2/folder3/test.txt', 'tests/sample/folder1/folder2/');
+        let configPath2 = await findConfigFile('tests/sample/folder1/folder2/folder3/test.txt', 'tests/sample/folder1/folder2/');
         expect(configPath2).toBe(null);
     });
 

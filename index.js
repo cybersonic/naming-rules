@@ -188,7 +188,7 @@ function scanFile(filePath, config, diagnostics = [], rootPath) {
  * @throws {Error} Throws an error if the initial file path does not exist.
  */
 function findConfigFile(filePath, rootPath = "/") {
-    if (filePath === rootPath) {
+    if (resolve(filePath) === resolve(rootPath)) {
         return null;
     }
 
