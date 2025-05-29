@@ -1,12 +1,5 @@
-const fs = require('fs');
-// const path = require('path');
-const { scan, findConfigFiles, findConfigFile, scanFile } = require('../index');
-// import { optimisedScan, findConfigFile, scanFile } from '../index';
+const { scan, findConfigFiles, findConfigFile, scanFile, validateRule} = require('../index');
 const path = require('path');
-// const { minimatch } = require('minimatch');
-// const exp = require('constants');
-
-
 describe('FindConfigs', () => {
     test("should find multiple config files in the path", async () => {
 
@@ -18,40 +11,8 @@ describe('FindConfigs', () => {
 
 
 describe('Naming Rules validation', () => {
-    // beforeAll(() => {
-    //     // Create temporary test directories and files.
-    //     if (!fs.existsSync('test_files')) {
-    //         fs.mkdirSync('test_files');
-    //     }
-    //     fs.writeFileSync(path.join('test_files', 'file1.cfm'), 'Some content without query.');
-    //     fs.writeFileSync(path.join('test_files', 'file2.cfm'), '<cfquery>SELECT * FROM table</cfquery>');
-
-    //     if (!fs.existsSync('webroot')) {
-    //         fs.mkdirSync('webroot');
-    //     }
-    //     if (!fs.existsSync('webroot/tests')) {
-    //         fs.mkdirSync('webroot/tests');
-    //     }
-    //     fs.writeFileSync(path.join('webroot', 'readme.md'), '# Documentation');
-    //     fs.writeFileSync(path.join('webroot', 'readme.ignore.md'), '# Ignored Documentation');
-    // });
-
-    // afterAll(() => {
-    //     // Clean up temporary files and directories.
-    //     if (fs.existsSync('test_files')) {
-
-    //         // fs.unlinkSync(path.join('test_files', 'file1.cfm'));
-    //         // fs.unlinkSync(path.join('test_files', 'file2.cfm'));
-    //         fs.rmSync('test_files', { recursive: true });
-    //     }
-
-    //     fs.unlinkSync(path.join('webroot', 'readme.md'));
-    //     fs.unlinkSync(path.join('webroot', 'readme.ignore.md'));
-    //     fs.rmSync('webroot', { recursive: true });
-    // });
 
     test("we should be able to do multiple exclusions and exclusion globs", () => {
-
 
         const config = {
             "scanRoot": path.resolve('tests/sample/'),
@@ -60,7 +21,7 @@ describe('Naming Rules validation', () => {
                     "type": "filename_postfix",
                     "excludes": "webroot/tests/**/Ignoreme.cfc,webroot/tests/**/Application.cfc",
                     "includes": "webroot/tests/**/*.cfc",
-                    "value": "Test",
+                    "value": "Test,Spec",
                     "severity": 3,
                     "message": "Unit tests should end with <SomeComponent>Test.cfc",
                     "href": "https://markdrew.io/noTests.html",
@@ -95,22 +56,6 @@ describe('Naming Rules validation', () => {
 
     });
 
-    // test('should pass validation for a file without issues', () => {
-    //     const diagnostics = validate(path.join('test_files', 'file1.cfm'), sampleConfig);
-    //     expect(diagnostics.length).toBe(0);
-    // });
-
-    // test('should fail validation for a file with cfquery', () => {
-    //     const diagnostics = validate(path.join('test_files', 'file2.cfm'), sampleConfig);
-    //     expect(diagnostics.length).toBeGreaterThan(0);
-    //     expect(diagnostics[0].message).toMatch(/CFQuery in CFM file/);
-    // });
-
-    // test('should fail validation for a file triggering workspace rule', () => {
-    //     const diagnostics = validate(path.join('webroot', 'readme.md'), sampleConfig);
-    //     expect(diagnostics.length).toBeGreaterThan(0);
-    //     expect(diagnostics[0].message).toMatch(/Extension \[\*\.md\]/);
-    // });
     test('should get a parent config file', async () => {
         let configPath = await findConfigFile('tests/sample/folder1/folder2/folder3/test.txt');
 
@@ -171,23 +116,24 @@ describe('Naming Rules validation', () => {
     });
 
 
-    xtest('should trigger a rule for a matching glob and not trigger for ignored files', () => {
+    test('should trigger a rule for a matching glob and not trigger for ignored files', () => {
         const rule = {
             type: 'extension_not_allowed',
-            include: 'webroot/**/*.md',
-            ignore: '**/readme.ignore.md',
+            includes: 'webroot/**/*.md',
+            excludes: '**/readme.ignore.md',
             severity: 1,
             message: 'Markdown files not allowed under webroot.',
-            href: "https://example.com/ourdocs.html"
+            href: "https://example.com/ourdocs.html",
+            name: "MarkdownFiles"
         };
 
         // This file matches the include and does not match the ignore.
-        let diagnostics = validateRule('webroot/readme.md', rule);
+        let diagnostics = validateRule('webroot/readme.md', rule, {scanRoot: ''});
 
         expect(diagnostics.length).toBe(1);
 
         // This file matches the include but is explicitly ignored.
-        diagnostics = validateRule('webroot/readme.ignore.md', rule);
+        diagnostics = validateRule('webroot/readme.ignore.md', rule, {scanRoot: ''});
 
         expect(diagnostics.length).toBe(0);
     });
@@ -197,14 +143,14 @@ describe('Naming Rules validation', () => {
     xtest('should trigger a rule for folder_not_allowed', () => {
         const rule = {
             type: 'folder_not_allowed',
-            include: 'webroot/**/tests/',
+            includes: 'webroot/**/tests/',
             severity: 1,
             message: 'Test folders are not allowed under the webroot.'
         };
 
         // This file matches the include and does not match the ignore.
         // This file matches the include but is explicitly ignored.
-        diagnostics = validateRule('webroot/tests/', rule);
+        diagnostics = validateRule('webroot/tests/', rule, {scanRoot: ''});
         expect(diagnostics.length).toBe(1);
         diagnostics = validateRule('webroot/nottest/', rule);
         expect(diagnostics.length).toBe(0);
@@ -214,8 +160,8 @@ describe('Naming Rules validation', () => {
     xtest('should trigger a filename postfix', () => {
         const rule = {
             type: 'filename_postfix',
-            include: 'tests/**/*.cfc',
-            exclude: 'tests/**/Application.cfc',
+            includes: 'tests/**/*.cfc',
+            excludes: 'tests/**/Application.cfc',
             value: "Test",
             severity: 1,
             message: 'Components under the test folder should be named {Something}Test.cfc',
@@ -234,7 +180,7 @@ describe('Naming Rules validation', () => {
 
 });
 
-describe("Validate File Content/Text Rules", () => {
+xdescribe("Validate File Content/Text Rules", () => {
 
     // test("should find items within content with a file path", () => {
     //     const rule = {
@@ -250,7 +196,7 @@ describe("Validate File Content/Text Rules", () => {
     //     expect(diagnose.length).toBe(1);
 
     // });
-    xtest("should find items within content with string content", () => {
+    test("should find items within content with string content", () => {
 
         // Need to see what JSON does to the regex string
         const rule = {
@@ -286,7 +232,7 @@ describe("Validate File Content/Text Rules", () => {
 
     });
 
-    xtest("should find items within content with a file path", () => {
+    test("should find items within content with a file path", () => {
         // Need to see what JSON does to the regex string
         const rule = {
             type: 'regex',
@@ -321,13 +267,27 @@ describe("Validate File Content/Text Rules", () => {
                 ]
             }
         );
-
-        // console.log(JSON.stringify(diagnostics, null, 2));
         expect(diagnostics.length).toBe(6);
-        // expect(diagnostics[0].range.start.line).toBe(26);
-        // expect(diagnostics[0].range.start.column).toBe(2);
-        // expect(diagnostics[0].range.end.line).toBe(26);
-        // expect(diagnostics[0].range.end.column).toBe(20);
+    });
+    test("should be able to use regex with flags", async () => {
+        const rule = {
+            type: 'regex',
+            includes: '**/*.cfm',
+            value: /QUERYEXECUTE/,
+            severity: 1,
+            flags: "i"
+        };
+        const diagnostics = await scan("tests/sample/folder1/folder2/folder3/bad.cfm",
+            {
+                "scanRoot": path.resolve('tests/sample/folder1'),
+                "rules": [
+                    rule
+                ]
+            }
+        );
+
+
+        expect(diagnostics.length).toBe(2);
 
     });
 

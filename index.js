@@ -53,7 +53,8 @@ class Diagnostic {
  * @param {Array<Diagnostic>} diagnostics - An array of diagnostic messages. (optional)
  */
 async function scan(scanRoot, config = {}) {
-    console.log("I am doing a scaaaaaaan");
+
+
     scanRoot = resolve(scanRoot);
     const diagnostics = [];
     // Check the scanroot is a folder or file 
@@ -64,12 +65,20 @@ async function scan(scanRoot, config = {}) {
     let fileConfig;
     let configJSON = {};
 
+
     if (statSync(scanRoot).isFile()) {
-        fileConfig = findConfigFile(scanRoot);
-        configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
-        configJSON["scanRoot"] = dirname(scanRoot);
+
+        configJSON = config;
+        if (!config.rules) {
+            console.info("No rules found in config. Looking for file");
+            fileConfig = findConfigFile(scanRoot);
+            configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
+            configJSON["scanRoot"] = dirname(scanRoot);
+        }
+
         return await scanFile(scanRoot, configJSON, diagnostics);
     }
+
 
     fileConfig = await findConfigFiles(scanRoot);
     configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
@@ -272,6 +281,7 @@ function validateRule(filePath, rule, config) {
         diag.name = rule.name;
     }
 
+    const flags = rule.flags || "gi";
 
     switch (rule.type) {
         case 'extension_not_allowed': {
@@ -289,7 +299,6 @@ function validateRule(filePath, rule, config) {
         case 'folder_not_allowed': {
             // For folder not allowed, we split the path and check if any segment equals the forbidden folder.
             if (minimatch(normalizedFilePath, rule.includes)) {
-
                 diag.resource = "folder";
                 diagnostics.push(diag);
             }
@@ -300,17 +309,35 @@ function validateRule(filePath, rule, config) {
             const ext = extname(fileName);
             const baseName = basename(fileName, ext);
 
-            if (!baseName.endsWith(rule.value)) {
-                diagnostics.push(
-                    diag
-                );
+            // Add the ability to check a range of postfixes
+            const postfixes = rule.value.split(',').map(p => p.trim());
+            let matchFound = false;
+            for (const postfix of postfixes) {
+                if (baseName.endsWith(postfix)) {
+                    matchFound = true;
+                    break;
+                }
+            }
+            if (!matchFound) {
+                diag.message = `Filename "${fileName}" does not end with any of the allowed postfixes: ${postfixes.join(', ')}`;
+                diag.range = {
+                    start: { line: 0, column: 0 },
+                    end: { line: 0, column: fileName.length }
+                };
+                diag.code = fileName;
+                diagnostics.push(diag);
             }
             break;
         }
         case 'regex': {
-            const regex = new RegExp(rule.value, 'gi');
+            const regex = new RegExp(rule.value, flags);
             const content = readFileSync(filePath, 'utf8');
             multiRegExMatch(regex, content, filePath, rule, diagnostics);
+
+            // console.log("Processing rule", rule.type, { flags }, { regex }, { content });
+            // console.log(diagnostics);
+
+            // return ["fail"];
 
             // if (match) {
             //     const startIndex = match.index;
@@ -431,5 +458,6 @@ module.exports = {
     findConfigFile,
     scanFile,
     scanFolder,
-    scan
+    scan,
+    validateRule //for testing
 }

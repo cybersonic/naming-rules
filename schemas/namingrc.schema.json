@@ -51,6 +51,12 @@
                     "name": {
                         "description": "Optional name for the rule",
                         "type": "string"
+                    },
+                    "flags": {
+                        "description": "Optional flags for regex rules",
+                        "type": "string",
+                        "pattern": "^(?:g?i?m?s?u?y?)$",
+                        "maxLength": 6
                     }
                 },
                 "required": [

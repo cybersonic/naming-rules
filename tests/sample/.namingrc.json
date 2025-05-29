@@ -8,6 +8,13 @@
             "severity": 3,
             "message": "Unit tests should end with <SomeComponent>Test.cfc",
             "href": "https://markdrew.io/noTests.html"
+        },
+        {
+            "type": "regex",
+            "includes": "webroot/tests/**/*.cfc",
+            "value": "<cfoutput",
+            "flags": "i",
+            "severity": 3
         }
     ]
 }
