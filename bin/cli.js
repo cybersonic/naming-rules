@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 
-import { program } from 'commander';
-import chalk from 'chalk';
-import { scan, version } from '../index.js';
-import { readFileSync } from 'fs';
+const { program } = require('commander');
+const chalk = require('chalk');
+const { scan, version } = require('../index.js');
+const { readFileSync } = require('fs');
 
 program
     .version(version())
@@ -22,10 +22,6 @@ if (!pathToScan || pathToScan === "") {
     console.error("Please provide a path to scan");
     process.exit(1);
 }
-// If it is a directory, we scan 
-const diagnostics = await scan(pathToScan);
-
-//If it is a file, we read the file and get config. 
 
 function getColorForSeverity(severity) {
     // Need to shift it by -1 to match the DiagnosticSeverity enum
@@ -44,14 +40,23 @@ function getColorForSeverity(severity) {
     }
 }
 
-let filtered = diagnostics;
-if (options.severity !== 'all') {
-    const severity = parseInt(options.severity);
-    filtered = diagnostics.filter(diag => diag.severity === severity);
+async function main() {
+    // If it is a directory, we scan 
+    const diagnostics = await scan(pathToScan);
+    
+    //If it is a file, we read the file and get config. 
+    
+    let filtered = diagnostics;
+    if (options.severity !== 'all') {
+        const severity = parseInt(options.severity);
+        filtered = diagnostics.filter(diag => diag.severity === severity);
+    }
+    
+    if (options.reporter === 'json') {
+        console.log(JSON.stringify(filtered, null, 2));
+    } else {
+        console.table(filtered, ['severity', 'uri', 'message']);
+    }
 }
 
-if (options.reporter === 'json') {
-    console.log(JSON.stringify(filtered, null, 2));
-} else {
-    console.table(filtered, ['severity', 'uri', 'message']);
-}
+main().catch(console.error);
