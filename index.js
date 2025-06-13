@@ -81,7 +81,13 @@ async function scan(scanRoot, config = {}) {
 
 
     fileConfig = await findConfigFiles(scanRoot);
-    configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
+    if (Array.isArray(fileConfig) || !fileConfig) {
+        // No config file found, use default config
+        configJSON = config || {};
+    } else {
+        // Config file found
+        configJSON = JSON.parse(readFileSync(fileConfig, 'utf8'));
+    }
     configJSON["scanRoot"] = scanRoot;
     return await scanFolder(scanRoot, configJSON, diagnostics);
     return diagnostics;
@@ -453,11 +459,17 @@ function getLineColumn(content, index) {
     };
 }
 
+function version() {
+    const packageJson = JSON.parse(readFileSync(join(__dirname, 'package.json'), 'utf8'));
+    return packageJson.version;
+}
+
 module.exports = {
     findConfigFiles,
     findConfigFile,
     scanFile,
     scanFolder,
     scan,
-    validateRule //for testing
+    validateRule, //for testing
+    version
 }
