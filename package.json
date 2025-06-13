@@ -13,7 +13,10 @@
   },
   "scripts": {
     "test": "jest",
-    "prepublish": "npm version patch --no-git-tag-version"
+    "preversion": "npm test",
+    "version": "git add -A",
+    "postversion": "git push && git push --tags",
+    "prepublishOnly": "npm version patch"
   },
   "keywords": [
     "Naming Rules",
