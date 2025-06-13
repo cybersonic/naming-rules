@@ -1,6 +1,6 @@
 {
   "name": "naming-rules",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "A utility to check paths and files against a naming rules file (`.namingrc.json`)",
   "author": "Mark Drew <mark.drew@gmail.com> (https://markdrew.io)",
   "repository": {
